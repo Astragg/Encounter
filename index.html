@@ -23,7 +23,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px;
             width: 100%;
             background: rgba(0, 0, 0, 0.8);
             border: 3px solid #d4af37;
@@ -79,6 +79,11 @@
             transform: translateY(0);
         }
 
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         select, input[type="range"] {
             padding: 10px;
             border: 2px solid #d4af37;
@@ -105,6 +110,24 @@
             text-align: center;
             font-weight: bold;
             color: #d4af37;
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        .status.loading {
+            background: rgba(212, 175, 55, 0.2);
+            color: #d4af37;
+        }
+
+        .status.error {
+            background: rgba(255, 107, 53, 0.2);
+            color: #ff6b35;
+            border: 1px solid #ff6b35;
         }
 
         .encounter-result {
@@ -171,6 +194,37 @@
             color: #e8d5b7;
         }
 
+        .hooks {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(0, 100, 0, 0.2);
+            border-radius: 8px;
+            border-left: 4px solid #90ee90;
+        }
+
+        .hooks h4 {
+            color: #90ee90;
+            margin-bottom: 10px;
+        }
+
+        .hooks ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .hooks li {
+            padding: 5px 0;
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .hooks li:before {
+            content: "✦";
+            position: absolute;
+            left: 0;
+            color: #90ee90;
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 20px;
@@ -193,8 +247,10 @@
         <h1>🛤️ Wanderer's Encounter</h1>
         <p class="subtitle">Roll for random travelers, merchants, and foes on the road</p>
         
+        <div class="status" id="status"></div>
+        
         <div class="controls">
-            <button class="btn" onclick="generateEncounter()">🎲 Roll Encounter</button>
+            <button class="btn" onclick="generateEncounter()" id="rollBtn">🎲 Roll Encounter</button>
             <button class="btn" onclick="clearEncounter()">🧹 Clear</button>
             
             <div class="range-container">
@@ -218,10 +274,51 @@
             <div class="dice-roll" id="diceRoll"></div>
             <div class="encounter-details" id="encounterDetails"></div>
             <div class="stats" id="encounterStats"></div>
+            <div class="hooks" id="encounterHooks" style="display: none;"></div>
         </div>
     </div>
 
     <script>
+        let encounterData = null;
+
+        // Load JSON data
+        async function loadEncounters() {
+            const status = document.getElementById('status');
+            const rollBtn = document.getElementById('rollBtn');
+            
+            try {
+                status.textContent = 'Loading encounters...';
+                status.className = 'status loading';
+                rollBtn.disabled = true;
+
+                const response = await fetch('encounters.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                encounterData = await response.json();
+                status.textContent = `Loaded ${Object.keys(encounterData).join(', ')} encounter types`;
+                status.className = 'status loading';
+                rollBtn.disabled = false;
+                status.style.display = 'none';
+            } catch (error) {
+                console.error('Error loading encounters:', error);
+                status.textContent = `Error loading encounters.json: ${error.message}. Using fallback data.`;
+                status.className = 'status error';
+                rollBtn.disabled = false;
+                loadFallbackData();
+            }
+        }
+
+        // Fallback data if JSON fails to load
+        function loadFallbackData() {
+            encounterData = {
+                friendly: { base: [{type: "merchant", desc: "merchant", goods: "goods"}] },
+                neutral: { base: [{type: "traveler", desc: "traveler", goods: "supplies"}] },
+                suspicious: { base: [{type: "thief", desc: "thief", goods: "stolen"}] },
+                hostile: { base: [{type: "bandit", desc: "bandits", monsters: "Bandit", cr: 0.125, num: "4d4"}] }
+            };
+        }
+
         // Update party size display
         function updatePartySize() {
             const slider = document.getElementById('partySize');
@@ -233,7 +330,27 @@
             return Math.floor(Math.random() * sides) + 1;
         }
 
-        function generateEncounter() {
+        function getEncountersByType(type, terrain) {
+            const category = encounterData[type];
+            if (!category) return [];
+            
+            let allEncounters = [...(category.base || [])];
+            
+            // Add terrain-specific encounters
+            const terrainSpecific = category[terrain];
+            if (terrainSpecific && terrainSpecific.length > 0) {
+                allEncounters = [...allEncounters, ...terrainSpecific];
+            }
+            
+            return allEncounters;
+        }
+
+        async function generateEncounter() {
+            if (!encounterData) {
+                alert('Encounters not loaded yet! Please wait...');
+                return;
+            }
+
             const partySize = parseInt(document.getElementById('partySize').value);
             const terrain = document.getElementById('terrain').value;
             const resultDiv = document.getElementById('encounterResult');
@@ -241,6 +358,7 @@
             const rollDiv = document.getElementById('diceRoll');
             const detailsDiv = document.getElementById('encounterDetails');
             const statsDiv = document.getElementById('encounterStats');
+            const hooksDiv = document.getElementById('encounterHooks');
 
             // Roll for encounter type (1d20)
             const encounterRoll = rollDice(20);
@@ -249,92 +367,54 @@
             let title = '';
             let details = '';
             let statsHTML = '';
+            let hooksHTML = '';
 
-            // Determine encounter based on roll and terrain
+            // Determine encounter based on roll
+            let encounterType, encounter;
             if (encounterRoll <= 5) {
-                // Friendly encounters (1-5)
-                const friendlyEncounters = getFriendlyEncounters(terrain);
-                const encounter = friendlyEncounters[Math.floor(Math.random() * friendlyEncounters.length)];
-                title = `👋 Friendly Traveler`;
+                encounterType = 'friendly';
+                const encounters = getEncountersByType('friendly', terrain);
+                encounter = encounters[Math.floor(Math.random() * encounters.length)];
+                title = `👋 Friendly Traveler: ${encounter.type}`;
                 details = generateFriendlyDetails(encounter, partySize);
+                hooksHTML = generateHooksHTML(encounter.hooks || []);
             } else if (encounterRoll <= 10) {
-                // Neutral encounters (6-10)
-                const neutralEncounters = getNeutralEncounters(terrain);
-                const encounter = neutralEncounters[Math.floor(Math.random() * neutralEncounters.length)];
-                title = `⚖️ Neutral Traveler`;
+                encounterType = 'neutral';
+                const encounters = getEncountersByType('neutral', terrain);
+                encounter = encounters[Math.floor(Math.random() * encounters.length)];
+                title = `⚖️ Neutral Traveler: ${encounter.type}`;
                 details = generateNeutralDetails(encounter, partySize);
+                hooksHTML = generateHooksHTML(encounter.hooks || []);
             } else if (encounterRoll <= 15) {
-                // Suspicious encounters (11-15)
-                const suspiciousEncounters = getSuspiciousEncounters(terrain);
-                const encounter = suspiciousEncounters[Math.floor(Math.random() * suspiciousEncounters.length)];
-                title = `⚠️ Suspicious Traveler`;
+                encounterType = 'suspicious';
+                const encounters = getEncountersByType('suspicious', terrain);
+                encounter = encounters[Math.floor(Math.random() * encounters.length)];
+                title = `⚠️ Suspicious Traveler: ${encounter.type}`;
                 details = generateSuspiciousDetails(encounter, partySize);
+                hooksHTML = generateHooksHTML(encounter.hooks || []);
             } else {
-                // Hostile encounters (16-20)
-                const hostileEncounters = getHostileEncounters(terrain);
-                const encounter = hostileEncounters[Math.floor(Math.random() * hostileEncounters.length)];
-                title = `⚔️ Hostile Encounter`;
+                encounterType = 'hostile';
+                const encounters = getEncountersByType('hostile', terrain);
+                encounter = encounters[Math.floor(Math.random() * encounters.length)];
+                title = `⚔️ Hostile Encounter: ${encounter.type}`;
                 details = generateHostileDetails(encounter, partySize);
                 statsHTML = generateCombatStats(encounter);
+                hooksHTML = generateHooksHTML(encounter.hooks || []);
             }
 
             titleDiv.textContent = title;
             detailsDiv.innerHTML = details;
             statsDiv.innerHTML = statsHTML;
+            
+            if (hooksHTML) {
+                hooksDiv.innerHTML = hooksHTML;
+                hooksDiv.style.display = 'block';
+            } else {
+                hooksDiv.style.display = 'none';
+            }
+            
             resultDiv.style.display = 'block';
             resultDiv.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function getFriendlyEncounters(terrain) {
-            const common = [
-                {type: 'merchant', desc: 'jovial merchant with a heavily laden cart', goods: 'fine cloth, spices, and trinkets'},
-                {type: 'pilgrim', desc: 'group of pilgrims singing hymns', goods: 'holy relics and donations'},
-                {type: 'scholar', desc: 'curious scholar with maps and books', goods: 'ancient tomes and writing supplies'}
-            ];
-            
-            const terrainSpecific = {
-                forest: [{type: 'herbalist', desc: 'foraging herbalist with rare plants', goods: 'healing herbs and potions'}],
-                mountain: [{type: 'miner', desc: 'hardy miner with gem samples', goods: 'ore samples and tools'}],
-                swamp: [{type: 'trapper', desc: 'swamp trapper with exotic furs', goods: 'pelts and swamp remedies'}],
-                desert: [{type: 'nomad', desc: 'desert nomad with camels', goods: 'water skins and spices'}],
-                coastal: [{type: 'fisherman', desc: 'fisherfolk with fresh catch', goods: 'fish and coastal herbs'}]
-            };
-            
-            return [...common, ...(terrainSpecific[terrain] || [])];
-        }
-
-        function getNeutralEncounters(terrain) {
-            return [
-                {type: 'traveler', desc: 'weary traveler seeking directions', goods: 'basic supplies'},
-                {type: 'performer', desc: 'wandering minstrel with lute', goods: 'entertainment'},
-                {type: 'messenger', desc: 'swift messenger on horseback', goods: 'sealed letters'}
-            ];
-        }
-
-        function getSuspiciousEncounters(terrain) {
-            return [
-                {type: 'thief', desc: 'shifty-eyed individual watching your coin purses', goods: 'stolen goods'},
-                {type: 'spy', desc: 'overly curious stranger asking too many questions', goods: 'hidden daggers'},
-                {type: 'cultist', desc: 'hooded figure muttering prayers to dark gods', goods: 'forbidden relics'}
-            ];
-        }
-
-        function getHostileEncounters(terrain) {
-            const encounters = [
-                {type: 'bandit', desc: '4d4 desperate bandits', monsters: 'Bandit', cr: 1/8, num: '4d4'},
-                {type: 'wolfpack', desc: '2d6 hungry wolves', monsters: 'Wolf', cr: 1/4, num: '2d6'},
-                {type: 'goblin', desc: '3d6 goblin raiders', monsters: 'Goblin', cr: 1/4, num: '3d6'}
-            ];
-            
-            const terrainSpecific = {
-                forest: [{type: 'spider', desc: '1 giant spider + 2d4 swarm', monsters: 'Giant Spider', cr: 1, num: '1'}],
-                mountain: [{type: 'ogre', desc: '1d4 ogres', monsters: 'Ogre', cr: 2, num: '1d4'}],
-                swamp: [{type: 'lizardfolk', desc: '2d6 lizardfolk hunters', monsters: 'Lizardfolk', cr: 1/2, num: '2d6'}],
-                desert: [{type: 'scorpion', desc: '1d4 giant scorpions', monsters: 'Giant Scorpion', cr: 3, num: '1d4'}],
-                coastal: [{type: 'sahuagin', desc: '2d6 sahuagin raiders', monsters: 'Sahuagin', cr: 1/2, num: '2d6'}]
-            };
-            
-            return [...encounters, ...(terrainSpecific[terrain] || [])];
         }
 
         function generateFriendlyDetails(encounter, partySize) {
@@ -345,9 +425,9 @@
             ];
             
             return `
-                <p>${encounter.desc}</p>
-                <p><strong>${greetings[Math.floor(Math.random() * greetings.length)]}</strong></p>
-                <p>They offer to trade their ${encounter.goods} and share rumors of the road ahead. 
+                <p><strong>${encounter.desc.charAt(0).toUpperCase() + encounter.desc.slice(1)}</strong></p>
+                <p><em>${greetings[Math.floor(Math.random() * greetings.length)]}</em></p>
+                <p>They offer to trade their <strong>${encounter.goods}</strong> and share rumors of the road ahead. 
                 They're willing to ${partySize > 3 ? 'join your party temporarily' : 'travel with you briefly'} 
                 and might have useful information about local dangers.</p>
             `;
@@ -355,19 +435,21 @@
 
         function generateNeutralDetails(encounter, partySize) {
             return `
-                <p>${encounter.desc}</p>
+                <p><strong>${encounter.desc.charAt(0).toUpperCase() + encounter.desc.slice(1)}</strong></p>
                 <p>They're neither friendly nor hostile, but might have information to trade. 
                 Roll <strong>Persuasion (DC 12)</strong> to gain their trust, or 
                 <strong>Insight (DC 13)</strong> to detect if they're hiding something.</p>
+                <p>They carry <strong>${encounter.goods}</strong>.</p>
             `;
         }
 
         function generateSuspiciousDetails(encounter, partySize) {
             return `
-                <p>${encounter.desc}</p>
+                <p><strong>${encounter.desc.charAt(0).toUpperCase() + encounter.desc.slice(1)}</strong></p>
                 <p><strong>Insight check (DC 14)</strong> reveals they're not what they seem. 
                 They might be casing your group for robbery or have darker intentions. 
                 Combat could break out if they're not handled carefully.</p>
+                <p>They carry <strong>${encounter.goods}</strong>.</p>
                 <p><em>Possible developments:</em> They might try to steal from you at camp, 
                 lead you into an ambush, or reveal their true nature later.</p>
             `;
@@ -375,16 +457,22 @@
 
         function generateHostileDetails(encounter, partySize) {
             return `
-                <p>${encounter.desc}</p>
+                <p><strong>${encounter.desc.charAt(0).toUpperCase() + encounter.desc.slice(1)}</strong></p>
                 <p><strong>Initiative!</strong> These foes attack without warning, seeking to rob or kill travelers.</p>
                 <p>${partySize > 4 ? 'The enemy numbers are manageable for your group.' : 
                    partySize <= 2 ? 'You\'re outnumbered! Consider fleeing or clever tactics.' : 
                    'A challenging but fair fight.'}</p>
+                <p><em>Treasure:</em> ${encounter.treasure || 'Standard loot'}</p>
             `;
         }
 
         function generateCombatStats(encounter) {
-            const numRoll = rollDice(parseInt(encounter.num.split('d')[1]));
+            const numParts = encounter.num.split('d');
+            const numDice = parseInt(numParts[0]);
+            const sides = parseInt(numParts[1]);
+            const numRoll = rollDice(sides) * numDice; // Simplified roll
+            
+            const xp = Math.round(encounter.cr * 100 * numRoll);
             return `
                 <div class="stat-item">
                     <div class="stat-label">Enemies</div>
@@ -396,17 +484,29 @@
                 </div>
                 <div class="stat-item">
                     <div class="stat-label">XP</div>
-                    <div class="stat-value">${(encounter.cr * 100 * numRoll).toLocaleString()}</div>
+                    <div class="stat-value">${xp.toLocaleString()}</div>
                 </div>
+            `;
+        }
+
+        function generateHooksHTML(hooks) {
+            if (!hooks || hooks.length === 0) return '';
+            
+            const hookList = hooks.map(hook => `<li>${hook}</li>`).join('');
+            return `
+                <h4>📜 Adventure Hooks:</h4>
+                <ul>${hookList}</ul>
             `;
         }
 
         function clearEncounter() {
             document.getElementById('encounterResult').style.display = 'none';
+            document.getElementById('encounterHooks').style.display = 'none';
         }
 
         // Initialize
         updatePartySize();
+        loadEncounters();
     </script>
 </body>
 </html>
