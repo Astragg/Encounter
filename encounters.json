@@ -1,0 +1,200 @@
+{
+  "friendly": {
+    "base": [
+      {
+        "type": "merchant",
+        "desc": "jovial merchant with a heavily laden cart",
+        "goods": "fine cloth, spices, and trinkets",
+        "hooks": ["Offers rare magic items", "Has news of nearby towns", "Wants escort to next village"]
+      },
+      {
+        "type": "pilgrim",
+        "desc": "group of pilgrims singing hymns",
+        "goods": "holy relics and donations",
+        "hooks": ["Seeking lost shrine", "Carrying cursed artifact", "Know temple secrets"]
+      },
+      {
+        "type": "scholar",
+        "desc": "curious scholar with maps and books",
+        "goods": "ancient tomes and writing supplies",
+        "hooks": ["Researching local ruins", "Needs test subjects", "Carries forbidden knowledge"]
+      }
+    ],
+    "road": [],
+    "forest": [
+      {
+        "type": "herbalist",
+        "desc": "foraging herbalist with rare plants",
+        "goods": "healing herbs and potions",
+        "hooks": ["Rare poison antidote", "Knows forest shortcuts", "Fleeing angry druids"]
+      }
+    ],
+    "mountain": [
+      {
+        "type": "miner",
+        "desc": "hardy miner with gem samples",
+        "goods": "ore samples and tools",
+        "hooks": ["Found cursed gem", "Knows hidden mine", "Escaping cave-in"]
+      }
+    ],
+    "swamp": [
+      {
+        "type": "trapper",
+        "desc": "swamp trapper with exotic furs",
+        "goods": "pelts and swamp remedies",
+        "hooks": ["Rare monster parts", "Knows quicksand locations", "Hunting were-crocodile"]
+      }
+    ],
+    "desert": [
+      {
+        "type": "nomad",
+        "desc": "desert nomad with camels",
+        "goods": "water skins and spices",
+        "hooks": ["Oasis directions", "Ancient dune tomb map", "Feuding with rival tribe"]
+      }
+    ],
+    "coastal": [
+      {
+        "type": "fisherman",
+        "desc": "fisherfolk with fresh catch",
+        "goods": "fish and coastal herbs",
+        "hooks": ["Strange deep-sea creature sightings", "Shipwreck salvage", "Mermaid rumors"]
+      }
+    ]
+  },
+  "neutral": {
+    "base": [
+      {
+        "type": "traveler",
+        "desc": "weary traveler seeking directions",
+        "goods": "basic supplies",
+        "hooks": ["Lost family member", "Carrying secret message", "Fleeing the law"]
+      },
+      {
+        "type": "performer",
+        "desc": "wandering minstrel with lute",
+        "goods": "entertainment",
+        "hooks": ["Knows noble gossip", "Cursed instrument", "Spy in disguise"]
+      },
+      {
+        "type": "messenger",
+        "desc": "swift messenger on horseback",
+        "goods": "sealed letters",
+        "hooks": ["Urgent war declaration", "Love letter gone wrong", "Blackmail material"]
+      }
+    ],
+    "road": [],
+    "forest": [],
+    "mountain": [],
+    "swamp": [],
+    "desert": [],
+    "coastal": []
+  },
+  "suspicious": {
+    "base": [
+      {
+        "type": "thief",
+        "desc": "shifty-eyed individual watching your coin purses",
+        "goods": "stolen goods",
+        "hooks": ["Fencing operation", "Pickpocket guild", "Desperate for redemption"]
+      },
+      {
+        "type": "spy",
+        "desc": "overly curious stranger asking too many questions",
+        "goods": "hidden daggers",
+        "hooks": ["Working for local lord", "Foreign agent", "Double agent"]
+      },
+      {
+        "type": "cultist",
+        "desc": "hooded figure muttering prayers to dark gods",
+        "goods": "forbidden relics",
+        "hooks": ["Recruiting members", "Sacrificial ritual", "Possessed by demon"]
+      }
+    ],
+    "road": [],
+    "forest": [],
+    "mountain": [],
+    "swamp": [],
+    "desert": [],
+    "coastal": []
+  },
+  "hostile": {
+    "base": [
+      {
+        "type": "bandit",
+        "desc": "4d4 desperate bandits",
+        "monsters": "Bandit",
+        "cr": 0.125,
+        "num": "4d4",
+        "treasure": "50-200 gp, mundane weapons"
+      },
+      {
+        "type": "wolfpack",
+        "desc": "2d6 hungry wolves",
+        "monsters": "Wolf",
+        "cr": 0.25,
+        "num": "2d6",
+        "treasure": "Wolf pelts (10 gp each)"
+      },
+      {
+        "type": "goblin",
+        "desc": "3d6 goblin raiders",
+        "monsters": "Goblin",
+        "cr": 0.25,
+        "num": "3d6",
+        "treasure": "20-100 gp, goblin weapons"
+      }
+    ],
+    "road": [],
+    "forest": [
+      {
+        "type": "spider",
+        "desc": "1 giant spider + 2d4 swarm",
+        "monsters": "Giant Spider",
+        "cr": 1,
+        "num": "1",
+        "treasure": "Silk (50 gp), spider venom"
+      }
+    ],
+    "mountain": [
+      {
+        "type": "ogre",
+        "desc": "1d4 ogres",
+        "monsters": "Ogre",
+        "cr": 2,
+        "num": "1d4",
+        "treasure": "200-500 gp, ogre club"
+      }
+    ],
+    "swamp": [
+      {
+        "type": "lizardfolk",
+        "desc": "2d6 lizardfolk hunters",
+        "monsters": "Lizardfolk",
+        "cr": 0.5,
+        "num": "2d6",
+        "treasure": "100-300 gp, tribal fetishes"
+      }
+    ],
+    "desert": [
+      {
+        "type": "scorpion",
+        "desc": "1d4 giant scorpions",
+        "monsters": "Giant Scorpion",
+        "cr": 3,
+        "num": "1d4",
+        "treasure": "300-800 gp, scorpion venom"
+      }
+    ],
+    "coastal": [
+      {
+        "type": "sahuagin",
+        "desc": "2d6 sahuagin raiders",
+        "monsters": "Sahuagin",
+        "cr": 0.5,
+        "num": "2d6",
+        "treasure": "150-400 gp, coral jewelry"
+      }
+    ]
+  }
+}
