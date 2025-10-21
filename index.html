@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D&D Random Traveler Encounter Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #2c1810 0%, #1a0f07 100%);
+            color: #e8d5b7;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            border: 3px solid #d4af37;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #d4af37;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #b8860b;
+            font-style: italic;
+            margin-bottom: 30px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: 2px solid #d4af37;
+            background: linear-gradient(145deg, #3c2f2f, #2c1810);
+            color: #e8d5b7;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .btn:hover {
+            background: linear-gradient(145deg, #d4af37, #b8860b);
+            color: #1a0f07;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        select, input[type="range"] {
+            padding: 10px;
+            border: 2px solid #d4af37;
+            background: #2c1810;
+            color: #e8d5b7;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        select:focus, input[type="range"]:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+        }
+
+        .range-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .range-value {
+            min-width: 40px;
+            text-align: center;
+            font-weight: bold;
+            color: #d4af37;
+        }
+
+        .encounter-result {
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #8b4513;
+            border-radius: 10px;
+            padding: 25px;
+            margin-top: 30px;
+            min-height: 200px;
+            display: none;
+        }
+
+        .encounter-title {
+            font-size: 1.8em;
+            color: #ff6b35;
+            margin-bottom: 15px;
+            text-align: center;
+            border-bottom: 2px solid #ff6b35;
+            padding-bottom: 10px;
+        }
+
+        .encounter-details {
+            line-height: 1.6;
+            font-size: 1.1em;
+        }
+
+        .dice-roll {
+            color: #d4af37;
+            font-weight: bold;
+            font-size: 1.2em;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(212, 175, 55, 0.1);
+            border-radius: 5px;
+            border-left: 4px solid #d4af37;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(139, 69, 19, 0.2);
+            border-radius: 8px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #b8860b;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #e8d5b7;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛤️ Wanderer's Encounter</h1>
+        <p class="subtitle">Roll for random travelers, merchants, and foes on the road</p>
+        
+        <div class="controls">
+            <button class="btn" onclick="generateEncounter()">🎲 Roll Encounter</button>
+            <button class="btn" onclick="clearEncounter()">🧹 Clear</button>
+            
+            <div class="range-container">
+                <label for="partySize">Party Size:</label>
+                <input type="range" id="partySize" min="1" max="8" value="4" onchange="updatePartySize()">
+                <span class="range-value" id="partySizeValue">4</span>
+            </div>
+            
+            <select id="terrain">
+                <option value="road">Highway/Road</option>
+                <option value="forest">Forest/Woods</option>
+                <option value="mountain">Mountains</option>
+                <option value="swamp">Swamp/Marsh</option>
+                <option value="desert">Desert</option>
+                <option value="coastal">Coastal/River</option>
+            </select>
+        </div>
+
+        <div class="encounter-result" id="encounterResult">
+            <div class="encounter-title" id="encounterTitle"></div>
+            <div class="dice-roll" id="diceRoll"></div>
+            <div class="encounter-details" id="encounterDetails"></div>
+            <div class="stats" id="encounterStats"></div>
+        </div>
+    </div>
+
+    <script>
+        // Update party size display
+        function updatePartySize() {
+            const slider = document.getElementById('partySize');
+            const valueSpan = document.getElementById('partySizeValue');
+            valueSpan.textContent = slider.value;
+        }
+
+        function rollDice(sides = 20) {
+            return Math.floor(Math.random() * sides) + 1;
+        }
+
+        function generateEncounter() {
+            const partySize = parseInt(document.getElementById('partySize').value);
+            const terrain = document.getElementById('terrain').value;
+            const resultDiv = document.getElementById('encounterResult');
+            const titleDiv = document.getElementById('encounterTitle');
+            const rollDiv = document.getElementById('diceRoll');
+            const detailsDiv = document.getElementById('encounterDetails');
+            const statsDiv = document.getElementById('encounterStats');
+
+            // Roll for encounter type (1d20)
+            const encounterRoll = rollDice(20);
+            rollDiv.textContent = `🎲 Encounter Roll: ${encounterRoll} (d20)`;
+
+            let title = '';
+            let details = '';
+            let statsHTML = '';
+
+            // Determine encounter based on roll and terrain
+            if (encounterRoll <= 5) {
+                // Friendly encounters (1-5)
+                const friendlyEncounters = getFriendlyEncounters(terrain);
+                const encounter = friendlyEncounters[Math.floor(Math.random() * friendlyEncounters.length)];
+                title = `👋 Friendly Traveler`;
+                details = generateFriendlyDetails(encounter, partySize);
+            } else if (encounterRoll <= 10) {
+                // Neutral encounters (6-10)
+                const neutralEncounters = getNeutralEncounters(terrain);
+                const encounter = neutralEncounters[Math.floor(Math.random() * neutralEncounters.length)];
+                title = `⚖️ Neutral Traveler`;
+                details = generateNeutralDetails(encounter, partySize);
+            } else if (encounterRoll <= 15) {
+                // Suspicious encounters (11-15)
+                const suspiciousEncounters = getSuspiciousEncounters(terrain);
+                const encounter = suspiciousEncounters[Math.floor(Math.random() * suspiciousEncounters.length)];
+                title = `⚠️ Suspicious Traveler`;
+                details = generateSuspiciousDetails(encounter, partySize);
+            } else {
+                // Hostile encounters (16-20)
+                const hostileEncounters = getHostileEncounters(terrain);
+                const encounter = hostileEncounters[Math.floor(Math.random() * hostileEncounters.length)];
+                title = `⚔️ Hostile Encounter`;
+                details = generateHostileDetails(encounter, partySize);
+                statsHTML = generateCombatStats(encounter);
+            }
+
+            titleDiv.textContent = title;
+            detailsDiv.innerHTML = details;
+            statsDiv.innerHTML = statsHTML;
+            resultDiv.style.display = 'block';
+            resultDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function getFriendlyEncounters(terrain) {
+            const common = [
+                {type: 'merchant', desc: 'jovial merchant with a heavily laden cart', goods: 'fine cloth, spices, and trinkets'},
+                {type: 'pilgrim', desc: 'group of pilgrims singing hymns', goods: 'holy relics and donations'},
+                {type: 'scholar', desc: 'curious scholar with maps and books', goods: 'ancient tomes and writing supplies'}
+            ];
+            
+            const terrainSpecific = {
+                forest: [{type: 'herbalist', desc: 'foraging herbalist with rare plants', goods: 'healing herbs and potions'}],
+                mountain: [{type: 'miner', desc: 'hardy miner with gem samples', goods: 'ore samples and tools'}],
+                swamp: [{type: 'trapper', desc: 'swamp trapper with exotic furs', goods: 'pelts and swamp remedies'}],
+                desert: [{type: 'nomad', desc: 'desert nomad with camels', goods: 'water skins and spices'}],
+                coastal: [{type: 'fisherman', desc: 'fisherfolk with fresh catch', goods: 'fish and coastal herbs'}]
+            };
+            
+            return [...common, ...(terrainSpecific[terrain] || [])];
+        }
+
+        function getNeutralEncounters(terrain) {
+            return [
+                {type: 'traveler', desc: 'weary traveler seeking directions', goods: 'basic supplies'},
+                {type: 'performer', desc: 'wandering minstrel with lute', goods: 'entertainment'},
+                {type: 'messenger', desc: 'swift messenger on horseback', goods: 'sealed letters'}
+            ];
+        }
+
+        function getSuspiciousEncounters(terrain) {
+            return [
+                {type: 'thief', desc: 'shifty-eyed individual watching your coin purses', goods: 'stolen goods'},
+                {type: 'spy', desc: 'overly curious stranger asking too many questions', goods: 'hidden daggers'},
+                {type: 'cultist', desc: 'hooded figure muttering prayers to dark gods', goods: 'forbidden relics'}
+            ];
+        }
+
+        function getHostileEncounters(terrain) {
+            const encounters = [
+                {type: 'bandit', desc: '4d4 desperate bandits', monsters: 'Bandit', cr: 1/8, num: '4d4'},
+                {type: 'wolfpack', desc: '2d6 hungry wolves', monsters: 'Wolf', cr: 1/4, num: '2d6'},
+                {type: 'goblin', desc: '3d6 goblin raiders', monsters: 'Goblin', cr: 1/4, num: '3d6'}
+            ];
+            
+            const terrainSpecific = {
+                forest: [{type: 'spider', desc: '1 giant spider + 2d4 swarm', monsters: 'Giant Spider', cr: 1, num: '1'}],
+                mountain: [{type: 'ogre', desc: '1d4 ogres', monsters: 'Ogre', cr: 2, num: '1d4'}],
+                swamp: [{type: 'lizardfolk', desc: '2d6 lizardfolk hunters', monsters: 'Lizardfolk', cr: 1/2, num: '2d6'}],
+                desert: [{type: 'scorpion', desc: '1d4 giant scorpions', monsters: 'Giant Scorpion', cr: 3, num: '1d4'}],
+                coastal: [{type: 'sahuagin', desc: '2d6 sahuagin raiders', monsters: 'Sahuagin', cr: 1/2, num: '2d6'}]
+            };
+            
+            return [...encounters, ...(terrainSpecific[terrain] || [])];
+        }
+
+        function generateFriendlyDetails(encounter, partySize) {
+            const greetings = [
+                "They wave enthusiastically and call out greetings!",
+                "They approach with smiles and offers of trade!",
+                "They seem genuinely happy to see other travelers!"
+            ];
+            
+            return `
+                <p>${encounter.desc}</p>
+                <p><strong>${greetings[Math.floor(Math.random() * greetings.length)]}</strong></p>
+                <p>They offer to trade their ${encounter.goods} and share rumors of the road ahead. 
+                They're willing to ${partySize > 3 ? 'join your party temporarily' : 'travel with you briefly'} 
+                and might have useful information about local dangers.</p>
+            `;
+        }
+
+        function generateNeutralDetails(encounter, partySize) {
+            return `
+                <p>${encounter.desc}</p>
+                <p>They're neither friendly nor hostile, but might have information to trade. 
+                Roll <strong>Persuasion (DC 12)</strong> to gain their trust, or 
+                <strong>Insight (DC 13)</strong> to detect if they're hiding something.</p>
+            `;
+        }
+
+        function generateSuspiciousDetails(encounter, partySize) {
+            return `
+                <p>${encounter.desc}</p>
+                <p><strong>Insight check (DC 14)</strong> reveals they're not what they seem. 
+                They might be casing your group for robbery or have darker intentions. 
+                Combat could break out if they're not handled carefully.</p>
+                <p><em>Possible developments:</em> They might try to steal from you at camp, 
+                lead you into an ambush, or reveal their true nature later.</p>
+            `;
+        }
+
+        function generateHostileDetails(encounter, partySize) {
+            return `
+                <p>${encounter.desc}</p>
+                <p><strong>Initiative!</strong> These foes attack without warning, seeking to rob or kill travelers.</p>
+                <p>${partySize > 4 ? 'The enemy numbers are manageable for your group.' : 
+                   partySize <= 2 ? 'You\'re outnumbered! Consider fleeing or clever tactics.' : 
+                   'A challenging but fair fight.'}</p>
+            `;
+        }
+
+        function generateCombatStats(encounter) {
+            const numRoll = rollDice(parseInt(encounter.num.split('d')[1]));
+            return `
+                <div class="stat-item">
+                    <div class="stat-label">Enemies</div>
+                    <div class="stat-value">${numRoll} ${encounter.monsters}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">CR</div>
+                    <div class="stat-value">${encounter.cr}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">XP</div>
+                    <div class="stat-value">${(encounter.cr * 100 * numRoll).toLocaleString()}</div>
+                </div>
+            `;
+        }
+
+        function clearEncounter() {
+            document.getElementById('encounterResult').style.display = 'none';
+        }
+
+        // Initialize
+        updatePartySize();
+    </script>
+</body>
+</html>
